@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RT-OS Hub — Richie's Tavern</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--green:#1a2e24;--brass:#c9a84c;--brass-dim:#8a7030;--cream:#e8dcc8;--cream-dim:#b8a888;--dark:#0d1510;--brick:#8b3a3a}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--cream);min-height:100vh;overflow-x:hidden}
+.topbar{background:rgba(26,46,36,.8);border-bottom:1px solid rgba(201,168,76,.1);padding:.8rem 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar h1{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--brass)}
+.topbar .user{font-size:.8rem;color:var(--cream-dim)}
+.topbar .logout{background:none;border:1px solid rgba(201,168,76,.2);color:var(--brass-dim);padding:.3rem .8rem;border-radius:4px;cursor:pointer;font-size:.75rem}
+.topbar .logout:hover{color:var(--brass);border-color:var(--brass)}
+.container{max-width:1000px;margin:0 auto;padding:2rem}
+h2{font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--brass);margin:2rem 0 1rem}
+h2:first-child{margin-top:0}
+.card{background:rgba(26,46,36,.5);border:1px solid rgba(201,168,76,.1);border-radius:10px;padding:1.5rem;margin-bottom:1rem}
+.card h3{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--brass);margin-bottom:.8rem}
+.rule{width:40px;height:1px;background:var(--brass);margin:.8rem 0;opacity:.5}
+
+/* Checklist */
+.cl-item{display:flex;align-items:center;gap:.8rem;padding:.5rem 0;border-bottom:1px solid rgba(201,168,76,.05);cursor:pointer}
+.cl-item:last-child{border-bottom:none}
+.cl-check{width:20px;height:20px;border-radius:50%;border:2px solid rgba(201,168,76,.3);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--brass);transition:all .2s}
+.cl-item.done .cl-check{background:var(--brass);border-color:var(--brass);color:var(--dark)}
+.cl-item.doing .cl-check{border-color:var(--brass);box-shadow:0 0 8px rgba(201,168,76,.3)}
+.cl-item.blocked .cl-check{border-color:var(--brick);color:var(--brick)}
+.cl-label{font-size:.85rem;flex:1;color:var(--cream-dim)}
+.cl-item.done .cl-label{text-decoration:line-through;opacity:.5}
+.cl-status{font-size:.7rem;padding:.15rem .5rem;border-radius:10px}
+.cl-status.doing{background:rgba(201,168,76,.15);color:var(--brass)}
+.cl-status.blocked{background:rgba(139,58,58,.2);color:#d4726a}
+.cl-status.done{background:rgba(26,46,36,.5);color:var(--cream-dim)}
+
+/* Timeline */
+.tl-item{display:flex;gap:1rem;padding:.6rem 0;border-left:2px solid rgba(201,168,76,.1);padding-left:1rem;margin-left:.5rem}
+.tl-item .tl-badge{font-size:.65rem;text-transform:uppercase;letter-spacing:1px;padding:.1rem .5rem;border-radius:3px;flex-shrink:0;min-width:60px;text-align:center}
+.tl-badge.now{background:var(--brass);color:var(--dark)}
+.tl-badge.soon{background:rgba(201,168,76,.15);color:var(--brass)}
+.tl-badge.later{background:rgba(26,46,36,.5);color:var(--cream-dim)}
+.tl-text{font-size:.85rem;color:var(--cream-dim)}
+
+/* Decisions */
+.dec{display:flex;align-items:center;gap:1rem;padding:.5rem 0;font-size:.85rem}
+.dec-owner{font-size:.65rem;background:rgba(201,168,76,.1);color:var(--brass);padding:.1rem .6rem;border-radius:10px;flex-shrink:0}
+.dec-text{color:var(--cream-dim);flex:1}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:768px){.grid2{grid-template-columns:1fr}.topbar{padding:.8rem 1rem}.container{padding:1rem}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>RT-OS Hub</h1>
+  <span class="user" id="user-label"></span>
+  <button class="logout" onclick="logout()">Leave</button>
+</div>
+<div class="container">
+
+  <!-- COUNTDOWN -->
+  <div class="card">
+    <h3>🎯 Opening Countdown</h3>
+    <div class="rule"></div>
+    <p style="font-size:2rem;font-family:'Playfair Display',serif;color:var(--brass)" id="countdown"></p>
+  </div>
+
+  <div class="grid2">
+    <!-- CHECKLIST -->
+    <div class="card">
+      <h3>📋 Pre-Opening Checklist</h3>
+      <div class="rule"></div>
+      <div id="checklist"></div>
+    </div>
+
+    <!-- DECISIONS -->
+    <div class="card">
+      <h3>⚡ Pending Decisions</h3>
+      <div class="rule"></div>
+      <div id="decisions"></div>
+    </div>
+  </div>
+
+  <!-- TIMELINE -->
+  <div class="card">
+    <h3>🗓️ Action Plan — Short / Mid / Long Term</h3>
+    <div class="rule"></div>
+    <div id="timeline"></div>
+  </div>
+
+  <!-- LINKS -->
+  <div class="card">
+    <h3>🔗 Quick Access</h3>
+    <div class="rule"></div>
+    <p style="font-size:.85rem;color:var(--cream-dim)">
+      <a href="floor-plan-en.html" style="color:var(--brass)">Floor Plan Presentation</a> &nbsp;·&nbsp;
+      <a href="academy.html" style="color:var(--brass)">Staff Academy</a> &nbsp;·&nbsp;
+      <a href="admin.html" style="color:var(--brass)">Admin Panel</a>
+    </p>
+  </div>
+
+</div>
+
+<script>
+// Auth check
+const role=localStorage.getItem('rtos_role');
+if(!role||(role!=='direction'&&role!=='superadmin')){window.location='index.html';}
+document.getElementById('user-label').textContent='👤 '+localStorage.getItem('rtos_name');
+
+function logout(){localStorage.clear();window.location='index.html';}
+
+// Countdown
+const opening=new Date('2026-09-16T17:00:00');
+setInterval(()=>{
+  const now=new Date();const d=Math.ceil((opening-now)/86400000);
+  document.getElementById('countdown').textContent=d>0?`J-${d} — ${opening.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}`:'OPEN 🎉';
+},1000);
+
+// Checklist data (stored in localStorage for persistence)
+const defaultChecklist=[
+  {id:1,label:'Walk the empty room — lock final table & section layout',status:'doing',owner:'Uli'},
+  {id:2,label:'Write full service sequence + validate Toast config',status:'doing',owner:'Juliano'},
+  {id:3,label:'First team dry run — no food, guest journey only',status:'pending',owner:'Juliano'},
+  {id:4,label:'Second run-through — trays + real plates',status:'pending',owner:'Juliano'},
+  {id:5,label:'Full dress rehearsal with invited guests, timed',status:'pending',owner:'Juliano'},
+  {id:6,label:'Debrief + adjust + finalize storefront',status:'pending',owner:'All'},
+  {id:7,label:'Google Business Profile — claimed, photos, hours live',status:'done',owner:'Juliano'},
+  {id:8,label:'Website relaunch — menu, hours, photo',status:'done',owner:'Juliano'},
+  {id:9,label:'Square POS — installed and tested',status:'blocked',owner:'Uli'},
+  {id:10,label:'Friend of Richie — QR code generated',status:'done',owner:'Juliano'},
+];
+let checklist=JSON.parse(localStorage.getItem('rtos_checklist')||'null')||defaultChecklist;
+if(!localStorage.getItem('rtos_checklist'))localStorage.setItem('rtos_checklist',JSON.stringify(checklist));
+
+const statusIcon={done:'✓',doing:'○',pending:'○',blocked:'✕'};
+function renderChecklist(){
+  document.getElementById('checklist').innerHTML=checklist.map(c=>`
+    <div class="cl-item ${c.status}" onclick="cycleStatus(${c.id})">
+      <div class="cl-check">${statusIcon[c.status]}</div>
+      <span class="cl-label">${c.label}</span>
+      <span class="cl-status ${c.status}">${c.status.toUpperCase()}</span>
+    </div>`).join('');
+}
+function cycleStatus(id){
+  const order=['pending','doing','done','blocked'];
+  const c=checklist.find(x=>x.id===id);
+  const i=order.indexOf(c.status);
+  c.status=order[(i+1)%order.length];
+  localStorage.setItem('rtos_checklist',JSON.stringify(checklist));
+  renderChecklist();
+}
+renderChecklist();
+
+// Decisions
+const decisions=[
+  {q:'Final menu version ready?',owner:'Richie'},
+  {q:'Photography timeline for food + space',owner:'Richie'},
+  {q:'Back bar setup complete?',owner:'Uli'},
+  {q:'Staff uniforms / dress code decided?',owner:'Richie'},
+  {q:'Soft opening guest list',owner:'Richie'},
+  {q:'Richie banquette seat orientation',owner:'Uli'},
+];
+document.getElementById('decisions').innerHTML=decisions.map(d=>`
+  <div class="dec"><span class="dec-owner">${d.owner}</span><span class="dec-text">${d.q}</span></div>`).join('');
+
+// Timeline
+const timeline=[
+  {label:'NOW',badge:'now',items:['Room layout finalized','Checklist items in progress','Staff training begins']},
+  {label:'THIS WEEK',badge:'soon',items:['Toast configured','First dry run completed','GBP photos uploaded']},
+  {label:'SEPT 14-15',badge:'soon',items:['Soft opening with invited guests','Final adjustments']},
+  {label:'SEPT 16',badge:'now',items:['🥂 OPENING NIGHT']},
+  {label:'POST-OPENING',badge:'later',items:['Staff Academy deployment','AI Concierge live','Guest feedback loop active']},
+  {label:'30-90 DAYS',badge:'later',items:['Full POS data integration','Menu optimization from data','Expansion planning']},
+];
+document.getElementById('timeline').innerHTML=timeline.map(t=>`
+  <div class="tl-item"><span class="tl-badge ${t.badge}">${t.label}</span><div class="tl-text">${t.items.join('<br>')}</div></div>`).join('');
+</script>
+</body>
+</html>

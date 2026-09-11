@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Richie's Tavern — Plan d'Opérations</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green: #1a2e24; --green-light: #243b2f; --brick: #8b3a3a; --brick-light: #a0524d;
+  --brass: #c9a84c; --brass-dim: #8a7030; --cream: #e8dcc8; --cream-dim: #b8a888;
+  --dark: #0d1510; --wood: #3a2e1a;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--cream);-webkit-font-smoothing:antialiased}
+
+body::after{content:'';position:fixed;inset:0;opacity:.03;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  z-index:999}
+
+#progress{position:fixed;bottom:0;left:0;right:0;height:2px;background:rgba(255,255,255,.06);z-index:100}
+#progress-fill{height:100%;background:var(--brass);transition:width .4s ease;width:0%}
+
+#dots{position:fixed;right:1.5rem;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;gap:10px}
+.dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.15);transition:all .35s ease;cursor:pointer;border:none}
+.dot.active{background:var(--brass);box-shadow:0 0 8px rgba(201,168,76,.5)}
+.dot.seen{background:rgba(255,255,255,.35)}
+@media(max-width:768px){#dots{right:.6rem;gap:8px}.dot{width:6px;height:6px}}
+
+#slides{width:100%;height:100%}
+.slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:3rem;opacity:0;pointer-events:none;transition:opacity .45s ease,transform .45s ease;transform:translateY(12px)}
+.slide.active{opacity:1;pointer-events:auto;transform:translateY(0)}
+.slide-inner{max-width:900px;width:100%}
+@media(max-width:768px){.slide{padding:1.5rem}}
+
+h1{font-family:'Playfair Display',serif;font-size:clamp(2rem,5vw,3.6rem);font-weight:700;color:var(--brass);line-height:1.2;margin-bottom:1rem}
+h2{font-family:'Playfair Display',serif;font-size:clamp(1.4rem,3.5vw,2.4rem);font-weight:600;color:var(--brass);margin-bottom:.8rem}
+h3{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:var(--brass);margin-bottom:.4rem}
+.accent{color:var(--brass)}
+.rule{width:60px;height:1px;background:var(--brass);margin:1.2rem 0;opacity:.6}
+.lead{font-size:1.15rem;color:var(--cream-dim);line-height:1.7;max-width:680px}
+.note{font-size:.85rem;color:var(--brass-dim);font-style:italic;margin-top:1rem}
+
+.card{background:rgba(26,46,36,.6);border:1px solid rgba(201,168,76,.12);border-radius:6px;padding:1.2rem}
+.card-brick{border-left:3px solid var(--brick)}
+
+/* ── GUEST JOURNEY PATH ── */
+#journey-view{margin-top:1.2rem;overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory}
+#journey-view::-webkit-scrollbar{height:3px}
+#journey-view::-webkit-scrollbar-thumb{background:var(--brass-dim);border-radius:3px}
+#journey-track{display:flex;gap:0;align-items:flex-end;padding:0 0 0 0;min-width:max-content}
+.journey-node{flex:0 0 68px;display:flex;flex-direction:column;align-items:center;cursor:pointer;position:relative;z-index:1;transition:all .4s cubic-bezier(.4,0,.2,1);padding-bottom:20px}
+.journey-node .icon{font-size:1.3rem;transition:all .4s cubic-bezier(.4,0,.2,1);width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(26,46,36,.5);border:2px solid rgba(201,168,76,.1)}
+.journey-node .label{font-size:.58rem;color:var(--cream-dim);text-align:center;margin-top:4px;max-width:66px;line-height:1.3;transition:all .4s}
+
+.journey-node.ahead .icon{opacity:.2;transform:scale(.75);border-color:transparent;background:rgba(26,46,36,.3)}
+.journey-node.ahead .label{opacity:.15;font-size:.5rem}
+
+.journey-node.passed .icon{opacity:.6;border-color:rgba(201,168,76,.2);background:rgba(26,46,36,.5);transform:scale(.85)}
+.journey-node.passed .label{opacity:.5;color:var(--brass-dim)}
+.journey-node.passed::after{content:'✓';position:absolute;top:-2px;right:2px;font-size:.55rem;color:var(--brass);opacity:.7}
+
+.journey-node.current .icon{transform:scale(1.25);border-color:var(--brass);background:rgba(201,168,76,.15);
+  box-shadow:0 0 20px rgba(201,168,76,.35),0 0 40px rgba(201,168,76,.12);
+  animation:nodePulse 2s ease-in-out infinite}
+.journey-node.current .label{opacity:1;color:var(--brass);font-size:.64rem;font-weight:500}
+@keyframes nodePulse{0%,100%{box-shadow:0 0 20px rgba(201,168,76,.35),0 0 40px rgba(201,168,76,.12)}50%{box-shadow:0 0 28px rgba(201,168,76,.5),0 0 56px rgba(201,168,76,.2)}}
+
+#journey-svg{display:block;width:100%;height:20px;margin-top:-4px;pointer-events:none;overflow:visible}
+#journey-path{fill:none;stroke:var(--brass);stroke-width:2;stroke-linecap:round;transition:stroke-dashoffset .6s cubic-bezier(.4,0,.2,1)}
+
+@media(max-width:768px){
+  .journey-node{flex:0 0 60px;padding-bottom:16px}
+  .journey-node .icon{font-size:1.1rem;width:34px;height:34px}
+  .journey-node .label{font-size:.5rem;max-width:58px}
+  #journey-view{cursor:grab}
+}
+
+/* ── FLOOR DIAGRAM ── */
+.floor{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:10px;margin:1.5rem 0}
+.zone{border-radius:6px;padding:1.5rem 1rem;text-align:center;position:relative;min-height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.zone:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.zone-100{background:rgba(139,58,58,.2);border:1px solid rgba(139,58,58,.4)}
+.zone-200{background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25)}
+.zone-300{background:rgba(26,46,36,.7);border:1px solid rgba(26,46,36,.9)}
+.zone-label{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:700;color:var(--brass)}
+.zone-desc{font-size:.75rem;color:var(--cream-dim);margin-top:.3rem}
+.zone-tables{font-size:.8rem;color:var(--cream);margin-top:.5rem}
+@media(max-width:768px){.floor{grid-template-columns:1fr;gap:8px}.zone{min-height:80px}}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:2rem;
+  background:rgba(13,21,16,.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  opacity:0;pointer-events:none;transition:opacity .2s ease}
+.modal-overlay.open{opacity:1;pointer-events:auto}
+.modal-box{background:var(--green);border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:2.5rem 2rem 2rem;max-width:480px;width:100%;position:relative;
+  transform:scale(.9) translateY(12px);transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
+.modal-overlay.open .modal-box{transform:scale(1) translateY(0)}
+.modal-close{position:absolute;top:.8rem;right:1rem;background:none;border:none;color:var(--brass-dim);font-size:1.5rem;cursor:pointer;line-height:1;padding:.3rem;transition:color .2s}
+.modal-close:hover{color:var(--brass)}
+.modal-number{font-family:'Playfair Display',serif;font-size:5rem;font-weight:700;color:var(--brass);opacity:.15;position:absolute;top:.5rem;right:1.5rem;line-height:1;pointer-events:none}
+.modal-title{font-family:'Playfair Display',serif;font-size:1.6rem;color:var(--brass);margin-bottom:.8rem;position:relative;z-index:1}
+.modal-detail{font-size:1rem;color:var(--cream-dim);line-height:1.7;position:relative;z-index:1}
+.modal-icon{font-size:2.5rem;margin-bottom:.5rem;position:relative;z-index:1}
+
+.checklist{list-style:none;margin-top:1.2rem}
+.checklist li{padding:.7rem 0;border-bottom:1px solid rgba(201,168,76,.08);font-size:.95rem;display:flex;align-items:flex-start;gap:.6rem}
+.checklist li::before{content:'○';color:var(--brass-dim);font-size:1.1rem;flex-shrink:0;margin-top:1px}
+
+.pullquote{font-family:'Playfair Display',serif;font-style:italic;font-size:1.2rem;color:var(--cream);line-height:1.5;border-left:2px solid var(--brass);padding-left:1.2rem;margin:1.5rem 0}
+
+#nav-hint{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);font-size:.7rem;color:var(--brass-dim);letter-spacing:1px;text-transform:uppercase;z-index:99;opacity:.6;pointer-events:none}
+#counter{position:fixed;bottom:2rem;left:1.5rem;font-size:.75rem;color:var(--brass-dim);z-index:100;font-family:'DM Sans',sans-serif}
+@media(max-width:768px){#nav-hint{bottom:.8rem;font-size:.6rem}#counter{bottom:.8rem;left:.6rem;font-size:.65rem}}
+</style>
+</head>
+<body>
+
+<div id="progress"><div id="progress-fill"></div></div>
+<div id="dots"></div>
+<div id="counter"></div>
+<div id="nav-hint">→ ou [espace] pour avancer</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="modal-box">
+    <button class="modal-close" aria-label="Fermer">&times;</button>
+    <div class="modal-number" id="modal-num"></div>
+    <div class="modal-icon" id="modal-icon"></div>
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-detail" id="modal-detail"></div>
+  </div>
+</div>
+
+<div id="slides">
+
+<!-- 0: HERO -->
+<div class="slide active" data-index="0">
+<div class="slide-inner">
+  <div class="rule"></div>
+  <h1>Richie's Tavern</h1>
+  <p class="lead">Plan d'opérations de la salle</p>
+  <p class="note">Document confidentiel · Préparé par Juliano Incorvaia · 10 septembre 2026</p>
+  <div class="rule" style="margin-top:1.5rem"></div>
+</div>
+</div>
+
+<!-- 1: THE STANDARD -->
+<div class="slide" data-index="1">
+<div class="slide-inner">
+  <h2>Un seul standard</h2>
+  <div class="pullquote">«&thinsp;Si tu étais le client, comment voudrais-tu être traité&thinsp;?&thinsp;»</div>
+  <p class="lead">C'est la règle que Richie a posée. Tout ce qui suit répond à cette question — de la même façon, tous les soirs, qu'il y ait deux tables ou salle comble.</p>
+</div>
+</div>
+
+<!-- 2: SERVICE VS HOSPITALITY -->
+<div class="slide" data-index="2">
+<div class="slide-inner">
+  <h2>Servir, c'est le minimum.<br><span class="accent">L'hospitalité</span>, c'est le reste.</h2>
+  <div class="rule"></div>
+  <p class="lead">Servir, c'est amener la bonne assiette à la bonne table au bon moment. L'hospitalité, c'est le moment où le client se sent vraiment <em>vu</em>. Une salle peut tourner parfaitement et rester froide.</p>
+  <p class="lead" style="margin-top:1rem">Les systèmes ci-dessous libèrent l'équipe — et Richie le premier — pour se concentrer sur cette deuxième partie. <strong>Richie s'assoit avec ses amis. Le reste tourne tout seul.</strong></p>
+</div>
+</div>
+
+<!-- 3: GUEST JOURNEY -->
+<div class="slide" data-index="3">
+<div class="slide-inner">
+  <h2>Le parcours du client</h2>
+  <p class="lead" style="margin-bottom:.5rem">14 étapes, du trottoir au «&thinsp;à bientôt&thinsp;».</p>
+  <div id="journey-view">
+    <div id="journey-track"></div>
+    </div>
+  <svg id="journey-svg" preserveAspectRatio="none"><path id="journey-path" d=""/></svg>
+  <p class="note" style="text-align:center">Appuyez pour révéler. Cliquez sur une étape pour les détails.</p>
+</div>
+</div>
+
+<!-- 4: ENTRANCE -->
+<div class="slide" data-index="4">
+<div class="slide-inner">
+  <h2>L'entrée et l'accueil</h2>
+  <div class="rule"></div>
+  <div class="card card-brick" style="margin-bottom:1rem"><h3>Une seule entrée</h3><p style="color:var(--cream-dim)">Le lobby. Le patio se rejoint depuis l'intérieur — pas de deuxième porte à gérer.</p></div>
+  <div class="card card-brick"><h3>Le pupitre</h3><p style="color:var(--cream-dim)">Installé devant le grand rideau. Une personne postée en permanence : elle gère les arrivées, l'attente, et dirige vers la bonne section.</p></div>
+</div>
+</div>
+
+<!-- 5: SECTIONS -->
+<div class="slide" data-index="5">
+<div class="slide-inner">
+  <h2>Les sections et la numérotation</h2>
+  <p class="lead">Le chiffre des centaines dit la section. N'importe qui, même en cuisine, sait en un coup d'œil où se trouve une table.</p>
+  <div class="floor">
+    <div class="zone zone-100" data-zone="100"><div class="zone-label">100</div><div class="zone-desc">Patio &amp; Banquettes</div><div class="zone-tables">101–105 Banquettes<br>106+ Patio</div></div>
+    <div class="zone zone-200" data-zone="200"><div class="zone-label">200</div><div class="zone-desc">Centre &amp; Bar</div><div class="zone-tables">201–204 Tables basses<br>205+ Bar</div></div>
+    <div class="zone zone-300" data-zone="300"><div class="zone-label">300</div><div class="zone-desc">Banquette Richie</div><div class="zone-tables">301+ Côté cuisine</div></div>
+  </div>
+  <p class="note">Le nombre exact de tables reste à vérifier avec Uli sur place. Cliquez sur une zone pour les détails.</p>
+</div>
+</div>
+
+<!-- 6: RICHIE'S SPOT -->
+<div class="slide" data-index="6">
+<div class="slide-inner">
+  <h2>La place de Richie</h2>
+  <div class="rule"></div>
+  <p class="lead">Banquette <span class="accent">Section 300</span> — près de la cuisine et des toilettes. La plus proche de la station de service : aucun souci de trajet pour le serveur.</p>
+  <div class="card card-brick" style="margin-top:1.5rem"><h3>À regarder avec Uli</h3><p style="color:var(--cream-dim)">Cette banquette est sur le passage des toilettes. L'orientation des assises, ou un petit repère visuel, pourrait suffire à garder ce coin tranquille au lieu d'en faire un couloir.</p></div>
+</div>
+</div>
+
+<!-- 7: TABLE TURN -->
+<div class="slide" data-index="7">
+<div class="slide-inner">
+  <h2>Le redressement des tables</h2>
+  <div class="rule"></div>
+  <div class="card" style="margin-bottom:.8rem"><h3>Rouleaux prêts à l'avance</h3><p style="color:var(--cream-dim)">Couverts roulés, stockés sur l'étagère de la station principale. Redresser = débarrasser, essuyer, poser un rouleau et un verre. Un seul geste.</p></div>
+  <div class="card" style="margin-bottom:.8rem"><h3>Stock fixe par poste</h3><p style="color:var(--cream-dim)">Reconstitué par le busser ou l'hôte — jamais par un serveur en plein service. Les bacs de débarrassage ne restent jamais visibles en salle.</p></div>
+  <div class="card card-brick"><h3>Deux personnes par table</h3><p style="color:var(--cream-dim)">L'une débarrasse, l'autre redresse. La salle ne donne jamais l'impression d'être encombrée.</p></div>
+</div>
+</div>
+
+<!-- 8: TEAM HABITS -->
+<div class="slide" data-index="8">
+<div class="slide-inner">
+  <h2>L'équipe — trois habitudes</h2>
+  <div class="rule"></div>
+  <div class="card" style="margin-bottom:.8rem"><h3>1. Briefing avant chaque service</h3><p style="color:var(--cream-dim)">Toujours à la même heure, toujours la même durée. Un rituel, pas une corvée.</p></div>
+  <div class="card" style="margin-bottom:.8rem"><h3>2. Un signal pour demander de l'aide</h3><p style="color:var(--cream-dim)">Choisi par l'équipe elle-même. Pas besoin de courir après un manager en plein rush.</p></div>
+  <div class="card card-brick"><h3>3. N'importe quel serveur, n'importe quelle table</h3><p style="color:var(--cream-dim)">Personne ne devrait entendre «&thinsp;je vais chercher ton serveur&thinsp;». C'est la meilleure façon de faire sentir au client qu'il n'est qu'un numéro.</p></div>
+</div>
+</div>
+
+<!-- 9: WHAT'S LEFT -->
+<div class="slide" data-index="9">
+<div class="slide-inner">
+  <h2>Ce qu'il reste à décider ensemble</h2>
+  <p class="lead">On ouvre le 16 septembre. Plutôt qu'un calendrier figé, on le construit ensemble à partir d'aujourd'hui.</p>
+  <ul class="checklist">
+    <li>Marcher la salle vide et fixer la disposition définitive des tables et des sections</li>
+    <li>Écrire la séquence de service complète et valider la configuration Toast</li>
+    <li>Première répétition avec l'équipe — sans nourriture, juste le parcours client</li>
+    <li>Deuxième répétition — avec plateaux et vraies assiettes</li>
+    <li>Répétition générale avec des invités, chronométrée du début à la fin</li>
+    <li>Débriefer, ajuster, régler les derniers détails de la vitrine</li>
+    <li><strong>Ouvrir.</strong></li>
+  </ul>
+</div>
+</div>
+
+</div>
+
+<script>
+const journeyData = [
+  {icon:'🏠',label:'Vitrine',detail:'La première impression. Le client voit l\'espace à travers la vitrine avant même de toucher la porte. La vitrine lui annonce quel genre de soirée l\'attend.'},
+  {icon:'👋',label:'Accueil en 10s',detail:'Contact visuel et reconnaissance dans les 10 secondes — même salle comble. Un signe de tête, un sourire, un « j\'arrive tout de suite » vous achète deux minutes de plus.'},
+  {icon:'⏳',label:'Attente honnête',detail:'Annoncer le vrai temps d\'attente. Proposer quelque chose à faire — un verre au bar, un tour dans la rue. Les clients attendent plus longtemps quand ils ont confiance.'},
+  {icon:'👣',label:'Trajet vers la table',detail:'Les conduire sans couper l\'espace d\'une autre table. Le trajet lui-même donne le ton — calme, posé, jamais pressé.'},
+  {icon:'🍸',label:'1ère boisson 2-3 min',detail:'La première boisson arrive vite. Elle signale : on est là. Tout le reste peut respirer après. L\'élan commence ici.'},
+  {icon:'📋',label:'Conseil menu',detail:'Connaître le menu par cœur. Recommander sans hésiter. « Qu\'est-ce qui est bon ? » ne devrait jamais obtenir un regard vide — ça devrait obtenir une histoire.'},
+  {icon:'🧾',label:'Ticket propre',detail:'Commandes saisies proprement dans Toast. Aucune erreur. La cuisine reçoit exactement ce que le client a demandé, sans deviner.'},
+  {icon:'⏱️',label:'Rythme des plats',detail:'Le timing entre les plats se lit à la table, pas à la montre. Observer le langage corporel — ils s\'attardent ou ils sont prêts ? Ajuster en temps réel.'},
+  {icon:'💬',label:'Vérification sincère',detail:'Pas « Tout va bien ? » — c\'est un piège oui/non. Demander à propos d\'un plat spécifique. « Comment est la côte de bœuf ? » Montrer qu\'on a remarqué ce qu\'ils ont commandé.'},
+  {icon:'🧹',label:'Débarrassage discret',detail:'Les assiettes disparaissent sans interrompre la conversation. Jamais empiler à table. La salle reste calme même quand la cuisine est sous pression.'},
+  {icon:'🍰',label:'Suggestion dessert',detail:'Une suggestion précise, pas toute la carte. « Le pain perdu vient de sortir du four » fonctionne mieux que « un dessert peut-être ? »'},
+  {icon:'📱',label:'Addition sur Toast',detail:'L\'addition déposée sans que le client ait à la demander. Pas d\'aller-retour à la caisse. La dernière transaction doit être invisible.'},
+  {icon:'🤝',label:'Au revoir personnel',detail:'Au revoir par le prénom si on l\'a. Contact visuel. « Merci d\'être venus ce soir. » C\'est le souvenir qu\'ils emportent — faites qu\'il compte.'},
+  {icon:'🔄',label:'Table remise en état',detail:'Deux personnes : l\'une débarrasse, l\'autre redresse. Rouleaux prêts à l\'avance. La salle ne ressemble jamais à un chantier entre deux services.'},
+];
+
+const zoneData = {
+  '100':{icon:'🍃',title:'Section 100 — Patio & Banquettes',detail:'Tables 101 à 105 pour les banquettes qui donnent sur le patio, 106 et plus pour la terrasse. Accessible depuis l\'intérieur uniquement — pas de deuxième entrée à gérer. Le patio doit être une découverte, pas une arrière-pensée.'},
+  '200':{icon:'🍺',title:'Section 200 — Centre & Bar',detail:'Tables 201 à 204 pour les tables basses au centre, 205 et plus pour le bar. Le cœur de l\'action — au plus près du bar et de l\'énergie de la salle. Là où bat le pouls du resto.'},
+  '300':{icon:'🛋️',title:'Section 300 — Banquette de Richie',detail:'Tables 301 et plus, côté cuisine. La banquette personnelle de Richie — la plus proche de la station de service pour une couverture sans effort. À noter : elle est sur le passage des toilettes ; un petit repère visuel suffit à garder ce coin privé.'},
+};
+
+// Build journey nodes
+const track=document.getElementById('journey-track');
+journeyData.forEach((d,i)=>{
+  const node=document.createElement('div');
+  node.className='journey-node ahead';
+  node.dataset.j=i;
+  node.innerHTML=`<div class="icon">${d.icon}</div><div class="label">${d.label}</div>`;
+  node.addEventListener('click',e=>{
+    e.stopPropagation();
+    if(!node.classList.contains('ahead'))openModal(d.icon,d.label,d.detail,i+1);
+  });
+  track.appendChild(node);
+});
+const journeyNodes=document.querySelectorAll('.journey-node');
+
+const slides=document.querySelectorAll('.slide');
+const total=slides.length;
+let current=0,journeyRevealed=0;
+
+const dotsEl=document.getElementById('dots');
+for(let i=0;i<total;i++){
+  const d=document.createElement('button');
+  d.className='dot'+(i===0?' active':'');
+  d.setAttribute('aria-label','Aller à la section '+(i+1));
+  d.addEventListener('click',()=>goTo(i));
+  dotsEl.appendChild(d);
+}
+const dots=document.querySelectorAll('.dot');
+
+const pathEl=document.getElementById('journey-path');
+function rebuildPath(){
+  if(!journeyNodes.length)return;
+  const vw=document.getElementById('journey-view');
+  const firstIcon=journeyNodes[0].querySelector('.icon');
+  const lastIcon=journeyNodes[journeyNodes.length-1].querySelector('.icon');
+  const vr=vw.getBoundingClientRect();
+  const x1=firstIcon.getBoundingClientRect().left+firstIcon.offsetWidth/2-vr.left+vw.scrollLeft;
+  const x2=lastIcon.getBoundingClientRect().left+lastIcon.offsetWidth/2-vr.left+vw.scrollLeft;
+  pathEl.setAttribute('d',`M${x1},10 L${x2},10`);
+  const len=pathEl.getTotalLength();
+  pathEl.style.strokeDasharray=len;
+  pathEl.style.strokeDashoffset=len;
+}
+function updatePath(r){
+  if(pathEl.getTotalLength()===0){rebuildPath();return;}
+  const len=pathEl.getTotalLength();
+  const pct=r/journeyData.length;
+  pathEl.style.strokeDashoffset=(len*(1-pct))+'px';
+}
+function updateJourneyNodes(){
+  journeyNodes.forEach((n,i)=>{
+    n.classList.remove('ahead','current','passed');
+    if(i<journeyRevealed-1)n.classList.add('passed');
+    else if(i===journeyRevealed-1)n.classList.add('current');
+    else n.classList.add('ahead');
+  });
+  updatePath(journeyRevealed);
+}
+function updateUI(){
+  slides.forEach((s,i)=>s.classList.toggle('active',i===current));
+  dots.forEach((d,i)=>d.className='dot'+(i===current?' active':(i<current?' seen':'')));
+  document.getElementById('progress-fill').style.width=((current)/(total-1)*100)+'%';
+  document.getElementById('counter').textContent=(current+1)+' / '+total;
+  if(current===3)updateJourneyNodes();
+}
+function goTo(i){if(i<0||i>=total)return;current=i;journeyRevealed=0;updateUI();}
+function next(){
+  if(current===3&&journeyRevealed<journeyData.length){journeyRevealed++;updateUI();return;}
+  if(current<total-1){current++;journeyRevealed=0;updateUI();}
+}
+function prev(){
+  if(current===3&&journeyRevealed>0){journeyRevealed--;updateUI();return;}
+  if(current>0){current--;journeyRevealed=0;updateUI();}
+}
+
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('modal').classList.contains('open')){
+    if(e.key==='Escape'){closeModal();return;}
+    return;
+  }
+  if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' '){e.preventDefault();next();}
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();prev();}
+  if(e.key==='Home'){e.preventDefault();goTo(0);}
+  if(e.key==='End'){e.preventDefault();goTo(total-1);}
+});
+
+document.addEventListener('click',e=>{
+  if(document.getElementById('modal').classList.contains('open'))return;
+  if(e.target.closest('.dot')||e.target.closest('button')||e.target.closest('.journey-node')||e.target.closest('.zone')||e.target.closest('.modal-overlay'))return;
+  if(e.clientX>window.innerWidth/2)next();else prev();
+});
+
+let touchX=0;
+document.addEventListener('touchstart',e=>{touchX=e.touches[0].clientX},{passive:true});
+document.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-touchX;if(Math.abs(dx)>50){dx<0?next():prev();}});
+
+// Modal
+const modal=document.getElementById('modal');
+const modalNum=document.getElementById('modal-num');
+const modalIcon=document.getElementById('modal-icon');
+const modalTitle=document.getElementById('modal-title');
+const modalDetail=document.getElementById('modal-detail');
+const modalClose=modal.querySelector('.modal-close');
+let lastFocused=null;
+
+function openModal(icon,title,detail,num){
+  lastFocused=document.activeElement;
+  modalIcon.textContent=icon;
+  modalTitle.textContent=title;
+  modalDetail.textContent=detail;
+  modalNum.textContent=num||'';
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden','false');
+  modalClose.focus();
+  modal.addEventListener('keydown',trapFocus);
+}
+function closeModal(){
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden','true');
+  modal.removeEventListener('keydown',trapFocus);
+  if(lastFocused)lastFocused.focus();
+}
+function trapFocus(e){
+  if(e.key!=='Tab')return;
+  const focusable=modal.querySelectorAll('button,[tabindex]:not([tabindex="-1"])');
+  if(!focusable.length)return;
+  const first=focusable[0],last=focusable[focusable.length-1];
+  if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+  else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+}
+modalClose.addEventListener('click',e=>{e.stopPropagation();closeModal();});
+modal.addEventListener('click',e=>{if(e.target===modal){e.stopPropagation();closeModal();}});
+
+document.querySelectorAll('.zone').forEach(z=>{
+  z.addEventListener('click',e=>{
+    e.stopPropagation();
+    const id=z.dataset.zone;
+    if(zoneData[id])openModal(zoneData[id].icon,zoneData[id].title,zoneData[id].detail,id);
+  });
+});
+
+updateUI();
+</script>
+</body>
+</html>

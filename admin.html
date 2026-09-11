@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RT-OS Admin — Richie's Tavern</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--green:#1a2e24;--brass:#c9a84c;--brass-dim:#8a7030;--cream:#e8dcc8;--cream-dim:#b8a888;--dark:#0d1510;--brick:#8b3a3a}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--cream);min-height:100vh}
+.topbar{background:rgba(26,46,36,.8);border-bottom:1px solid rgba(201,168,76,.1);padding:.8rem 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar h1{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--brass)}
+.topbar .user{font-size:.8rem;color:var(--cream-dim)}
+.topbar .logout{background:none;border:1px solid rgba(201,168,76,.2);color:var(--brass-dim);padding:.3rem .8rem;border-radius:4px;cursor:pointer;font-size:.75rem}
+.topbar .logout:hover{color:var(--brass);border-color:var(--brass)}
+.container{max-width:900px;margin:0 auto;padding:2rem}
+h2{font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--brass);margin-bottom:1rem}
+.card{background:rgba(26,46,36,.5);border:1px solid rgba(201,168,76,.1);border-radius:10px;padding:1.5rem;margin-bottom:1rem}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+td,th{padding:.6rem;text-align:left;border-bottom:1px solid rgba(201,168,76,.08)}
+th{color:var(--brass);font-weight:500;font-size:.75rem;text-transform:uppercase;letter-spacing:1px}
+td{color:var(--cream-dim)}
+.badge{font-size:.65rem;padding:.15rem .5rem;border-radius:8px}
+.badge.superadmin{background:var(--brass);color:var(--dark)}
+.badge.direction{background:rgba(201,168,76,.15);color:var(--brass)}
+.badge.staff{background:rgba(26,46,36,.5);color:var(--cream-dim)}
+.rule{width:40px;height:1px;background:var(--brass);margin:.8rem 0 1.5rem;opacity:.5}
+.actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem}
+.actions a{color:var(--brass);text-decoration:none;font-size:.8rem;padding:.4rem .8rem;border:1px solid rgba(201,168,76,.2);border-radius:6px;transition:all .2s}
+.actions a:hover{background:rgba(201,168,76,.1);border-color:var(--brass)}
+@media(max-width:768px){.topbar{padding:.8rem 1rem}.container{padding:1rem}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>RT-OS Admin Panel</h1>
+  <span class="user" id="user-label"></span>
+  <button class="logout" onclick="logout()">Leave</button>
+</div>
+<div class="container">
+
+  <div class="card">
+    <h2>🛡️ Access Management</h2>
+    <div class="rule"></div>
+    <table>
+      <tr><th>Person</th><th>Role</th><th>Access Code</th><th>Status</th></tr>
+      <tr><td>Juliano Incorvaia</td><td><span class="badge superadmin">SUPERADMIN</span></td><td>juliano2026</td><td>✅ Active</td></tr>
+      <tr><td>Richie</td><td><span class="badge direction">DIRECTION</span></td><td>richie2026</td><td>✅ Active</td></tr>
+      <tr><td>Uli</td><td><span class="badge direction">DIRECTION</span></td><td>richie2026</td><td>✅ Active</td></tr>
+      <tr><td>Staff Team</td><td><span class="badge staff">STAFF</span></td><td>teamrt2026</td><td>⏳ Pre-opening</td></tr>
+    </table>
+    <p style="font-size:.75rem;color:var(--brass-dim);margin-top:1rem">
+      To add users: edit <code>index.html</code> — add entry in the <code>users</code> object. Simple.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>📋 System Status</h2>
+    <div class="rule"></div>
+    <table>
+      <tr><th>Module</th><th>Status</th><th>URL</th></tr>
+      <tr><td>Login</td><td>✅ Live</td><td>/index.html</td></tr>
+      <tr><td>Hub Dashboard</td><td>✅ Live</td><td>/hub.html</td></tr>
+      <tr><td>Staff Academy</td><td>✅ Live</td><td>/academy.html</td></tr>
+      <tr><td>Floor Plan (EN)</td><td>✅ Deployed</td><td>/floor-plan-en.html</td></tr>
+      <tr><td>Floor Plan (FR)</td><td>✅ Deployed</td><td>/floor-plan.html</td></tr>
+      <tr><td>Admin Panel</td><td>✅ Here</td><td>/admin.html</td></tr>
+    </table>
+  </div>
+
+  <div class="actions">
+    <a href="hub.html">→ Hub Dashboard</a>
+    <a href="academy.html">→ Academy</a>
+    <a href="floor-plan-en.html">→ Floor Plan</a>
+  </div>
+
+</div>
+<script>
+const role=localStorage.getItem('rtos_role');
+if(role!=='superadmin'){window.location='index.html';}
+document.getElementById('user-label').textContent='👤 '+localStorage.getItem('rtos_name');
+function logout(){localStorage.clear();window.location='index.html';}
+</script>
+</body>
+</html>

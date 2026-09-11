@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Richie's Tavern — Floor Operations Plan</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green: #1a2e24; --green-light: #243b2f; --brick: #8b3a3a; --brick-light: #a0524d;
+  --brass: #c9a84c; --brass-dim: #8a7030; --cream: #e8dcc8; --cream-dim: #b8a888;
+  --dark: #0d1510; --wood: #3a2e1a;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--cream);-webkit-font-smoothing:antialiased}
+
+body::after{content:'';position:fixed;inset:0;opacity:.03;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  z-index:999}
+
+#progress{position:fixed;bottom:0;left:0;right:0;height:2px;background:rgba(255,255,255,.06);z-index:100}
+#progress-fill{height:100%;background:var(--brass);transition:width .4s ease;width:0%}
+
+#dots{position:fixed;right:1.5rem;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;gap:10px}
+.dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.15);transition:all .35s ease;cursor:pointer;border:none}
+.dot.active{background:var(--brass);box-shadow:0 0 8px rgba(201,168,76,.5)}
+.dot.seen{background:rgba(255,255,255,.35)}
+@media(max-width:768px){#dots{right:.6rem;gap:8px}.dot{width:6px;height:6px}}
+
+#slides{width:100%;height:100%}
+.slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:3rem;opacity:0;pointer-events:none;transition:opacity .45s ease,transform .45s ease;transform:translateY(12px)}
+.slide.active{opacity:1;pointer-events:auto;transform:translateY(0)}
+.slide-inner{max-width:900px;width:100%}
+@media(max-width:768px){.slide{padding:1.5rem}}
+
+h1{font-family:'Playfair Display',serif;font-size:clamp(2rem,5vw,3.6rem);font-weight:700;color:var(--brass);line-height:1.2;margin-bottom:1rem}
+h2{font-family:'Playfair Display',serif;font-size:clamp(1.4rem,3.5vw,2.4rem);font-weight:600;color:var(--brass);margin-bottom:.8rem}
+h3{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:var(--brass);margin-bottom:.4rem}
+.accent{color:var(--brass)}
+.rule{width:60px;height:1px;background:var(--brass);margin:1.2rem 0;opacity:.6}
+.lead{font-size:1.15rem;color:var(--cream-dim);line-height:1.7;max-width:680px}
+.note{font-size:.85rem;color:var(--brass-dim);font-style:italic;margin-top:1rem}
+
+.card{background:rgba(26,46,36,.6);border:1px solid rgba(201,168,76,.12);border-radius:6px;padding:1.2rem}
+.card-brick{border-left:3px solid var(--brick)}
+
+/* ── GUEST JOURNEY CARD STACK ── */
+#journey-stage{position:relative;height:420px;perspective:1200px;margin-top:.5rem;overflow:hidden}
+.j-card{position:absolute;left:50%;bottom:10px;width:420px;height:300px;border-radius:14px;
+  background:rgba(26,46,36,.85);border:1px solid rgba(201,168,76,.15);
+  display:flex;flex-direction:column;align-items:flex-start;text-align:left;
+  padding:1.8rem 2rem;cursor:pointer;transition:all .5s cubic-bezier(.34,1.56,.64,1);
+  transform-origin:bottom center;backface-visibility:hidden;
+  box-shadow:0 4px 24px rgba(0,0,0,.4);justify-content:flex-start}
+.j-card .j-icon{font-size:1.8rem;margin-bottom:.3rem;transition:all .5s}
+.j-card .j-title{font-family:'Playfair Display',serif;font-size:1.15rem;color:var(--brass);margin-bottom:.3rem;transition:all .5s}
+.j-card .j-desc{font-size:.78rem;color:var(--cream-dim);line-height:1.55;transition:all .5s;flex:1}
+.j-card .j-link{margin-top:.8rem;font-size:.75rem;color:var(--brass);text-decoration:none;border-bottom:1px solid transparent;transition:all .3s;opacity:0;transform:translateY(6px);display:inline-block}
+.j-card .j-link:hover{border-color:var(--brass)}
+.j-card.active .j-link{opacity:1;transform:translateY(0)}
+.j-card.active{background:rgba(26,46,36,.95);border-color:rgba(201,168,76,.4);
+  box-shadow:0 0 36px rgba(201,168,76,.15),0 10px 40px rgba(0,0,0,.5)}
+.j-card.active .j-icon{font-size:2.2rem}
+.j-card.active .j-title{font-size:1.35rem}
+.j-card.active .j-desc{font-size:.85rem}
+
+/* Nav arrows */
+.j-arrows{display:flex;justify-content:center;gap:2rem;margin-top:.6rem}
+.j-arrow{background:none;border:1px solid rgba(201,168,76,.25);color:var(--brass);width:40px;height:40px;border-radius:50%;
+  cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.j-arrow:hover{background:rgba(201,168,76,.1);border-color:var(--brass)}
+.j-counter{text-align:center;font-size:.72rem;color:var(--brass-dim);margin-top:.4rem}
+
+@media(max-width:768px){
+  #journey-stage{height:340px}
+  .j-card{width:85vw;height:240px;padding:1.2rem 1.4rem}
+  .j-card .j-icon{font-size:1.4rem}
+  .j-card .j-title{font-size:.9rem}
+  .j-card .j-desc{font-size:.68rem}
+  .j-card.active .j-icon{font-size:1.8rem}
+  .j-card.active .j-title{font-size:1.1rem}
+  .j-card.active .j-desc{font-size:.75rem}
+  .j-arrow{width:36px;height:36px}
+}
+
+/* ── FLOOR DIAGRAM ── */
+.floor{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:10px;margin:1.5rem 0}
+.zone{border-radius:6px;padding:1.5rem 1rem;text-align:center;position:relative;min-height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.zone:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.zone-100{background:rgba(139,58,58,.2);border:1px solid rgba(139,58,58,.4)}
+.zone-200{background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25)}
+.zone-300{background:rgba(26,46,36,.7);border:1px solid rgba(26,46,36,.9)}
+.zone-label{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:700;color:var(--brass)}
+.zone-desc{font-size:.75rem;color:var(--cream-dim);margin-top:.3rem}
+.zone-tables{font-size:.8rem;color:var(--cream);margin-top:.5rem}
+@media(max-width:768px){.floor{grid-template-columns:1fr;gap:8px}.zone{min-height:80px}}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:2rem;
+  background:rgba(13,21,16,.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  opacity:0;pointer-events:none;transition:opacity .2s ease}
+.modal-overlay.open{opacity:1;pointer-events:auto}
+.modal-box{background:var(--green);border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:2.5rem 2rem 2rem;max-width:480px;width:100%;position:relative;
+  transform:scale(.9) translateY(12px);transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
+.modal-overlay.open .modal-box{transform:scale(1) translateY(0)}
+.modal-close{position:absolute;top:.8rem;right:1rem;background:none;border:none;color:var(--brass-dim);font-size:1.5rem;cursor:pointer;line-height:1;padding:.3rem;
+  transition:color .2s}
+.modal-close:hover{color:var(--brass)}
+.modal-number{font-family:'Playfair Display',serif;font-size:5rem;font-weight:700;color:var(--brass);opacity:.15;position:absolute;top:.5rem;right:1.5rem;line-height:1;pointer-events:none}
+.modal-title{font-family:'Playfair Display',serif;font-size:1.6rem;color:var(--brass);margin-bottom:.8rem;position:relative;z-index:1}
+.modal-detail{font-size:1rem;color:var(--cream-dim);line-height:1.7;position:relative;z-index:1}
+.modal-icon{font-size:2.5rem;margin-bottom:.5rem;position:relative;z-index:1}
+
+.checklist{list-style:none;margin-top:1.2rem}
+.checklist li{padding:.7rem 0;border-bottom:1px solid rgba(201,168,76,.08);font-size:.95rem;display:flex;align-items:flex-start;gap:.6rem}
+.checklist li::before{content:'○';color:var(--brass-dim);font-size:1.1rem;flex-shrink:0;margin-top:1px}
+
+.pullquote{font-family:'Playfair Display',serif;font-style:italic;font-size:1.2rem;color:var(--cream);line-height:1.5;border-left:2px solid var(--brass);padding-left:1.2rem;margin:1.5rem 0}
+
+#nav-hint{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);font-size:.7rem;color:var(--brass-dim);letter-spacing:1px;text-transform:uppercase;z-index:99;opacity:.6;pointer-events:none}
+#counter{position:fixed;bottom:2rem;left:1.5rem;font-size:.75rem;color:var(--brass-dim);z-index:100;font-family:'DM Sans',sans-serif}
+@media(max-width:768px){#nav-hint{bottom:.8rem;font-size:.6rem}#counter{bottom:.8rem;left:.6rem;font-size:.65rem}}
+</style>
+</head>
+<body>
+
+<div id="progress"><div id="progress-fill"></div></div>
+<div id="dots"></div>
+<div id="counter"></div>
+<div id="nav-hint">→ or [space] to advance</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="modal-box">
+    <button class="modal-close" aria-label="Close">&times;</button>
+    <div class="modal-number" id="modal-num"></div>
+    <div class="modal-icon" id="modal-icon"></div>
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-detail" id="modal-detail"></div>
+  </div>
+</div>
+
+<div id="slides">
+
+<!-- 0: HERO -->
+<div class="slide active" data-index="0">
+<div class="slide-inner">
+  <div class="rule"></div>
+  <h1>Richie's Tavern</h1>
+  <p class="lead">Floor Operations Plan</p>
+  <p class="note">Confidential document · Prepared by Juliano Incorvaia · September 10, 2026</p>
+  <div class="rule" style="margin-top:1.5rem"></div>
+</div>
+</div>
+
+<!-- 1: THE STANDARD -->
+<div class="slide" data-index="1">
+<div class="slide-inner">
+  <h2>One Standard</h2>
+  <div class="pullquote">"If you were the guest, how would you want to be treated?"</div>
+  <p class="lead">That's the rule Richie set. Everything that follows answers that question — the same way, every night, whether there are two tables or a full house.</p>
+</div>
+</div>
+
+<!-- 2: SERVICE VS HOSPITALITY -->
+<div class="slide" data-index="2">
+<div class="slide-inner">
+  <h2>Service is the minimum.<br><span class="accent">Hospitality</span> is the rest.</h2>
+  <div class="rule"></div>
+  <p class="lead">Service is getting the right plate to the right table at the right time. Hospitality is the moment the guest feels truly <em>seen</em>. A room can run perfectly and still feel cold.</p>
+  <p class="lead" style="margin-top:1rem">The systems below free up the team — and Richie first — to focus on that second part. <strong>Richie sits with his friends. Everything else runs itself.</strong></p>
+</div>
+</div>
+
+<!-- 3: GUEST JOURNEY -->
+<div class="slide" data-index="3">
+<div class="slide-inner">
+  <h2>The Guest Journey</h2>
+  <p class="lead" style="margin-bottom:.5rem">14 steps, from the sidewalk to "see you soon."</p>
+  <div id="journey-stage"></div>
+  <div class="j-arrows">
+    <button class="j-arrow" id="j-prev" aria-label="Previous">◂</button>
+    <button class="j-arrow" id="j-next" aria-label="Next">▸</button>
+  </div>
+  <div class="j-counter" id="j-counter">1 / 14</div>
+  <p class="note" style="text-align:center">Click a card to advance. Click "Learn More →" for the full breakdown.</p>
+</div>
+</div>
+
+<!-- 4: ENTRANCE -->
+<div class="slide" data-index="4">
+<div class="slide-inner">
+  <h2>Entrance &amp; Host Stand</h2>
+  <div class="rule"></div>
+  <div class="card card-brick" style="margin-bottom:1rem">
+    <h3>One entrance only</h3>
+    <p style="color:var(--cream-dim)">The lobby. The patio is accessed from inside — no second door to manage.</p>
+  </div>
+  <div class="card card-brick">
+    <h3>The host stand</h3>
+    <p style="color:var(--cream-dim)">Set up in front of the large curtain. One person posted here at all times — managing arrivals, the wait, and directing guests to the right section.</p>
+  </div>
+</div>
+</div>
+
+<!-- 5: SECTIONS -->
+<div class="slide" data-index="5">
+<div class="slide-inner">
+  <h2>Sections &amp; Table Numbering</h2>
+  <p class="lead">The hundreds digit tells you the section. Anyone — even in the kitchen — knows at a glance where a table is.</p>
+  <div class="floor">
+    <div class="zone zone-100" data-zone="100">
+      <div class="zone-label">100</div><div class="zone-desc">Patio &amp; Banquettes</div><div class="zone-tables">101–105 Banquettes<br>106+ Patio</div>
+    </div>
+    <div class="zone zone-200" data-zone="200">
+      <div class="zone-label">200</div><div class="zone-desc">Center &amp; Bar</div><div class="zone-tables">201–204 Low Tables<br>205+ Bar</div>
+    </div>
+    <div class="zone zone-300" data-zone="300">
+      <div class="zone-label">300</div><div class="zone-desc">Richie's Banquette</div><div class="zone-tables">301+ Kitchen side</div>
+    </div>
+  </div>
+  <p class="note">Exact table count to be confirmed with Uli on site. Click any zone for details.</p>
+</div>
+</div>
+
+<!-- 6: RICHIE'S SPOT -->
+<div class="slide" data-index="6">
+<div class="slide-inner">
+  <h2>Richie's Spot</h2>
+  <div class="rule"></div>
+  <p class="lead">Banquette in <span class="accent">Section 300</span> — near the kitchen and restrooms. Closest to the service station: zero travel issues for the server covering it.</p>
+  <div class="card card-brick" style="margin-top:1.5rem">
+    <h3>To review with Uli</h3>
+    <p style="color:var(--cream-dim)">This banquette sits along the restroom pathway. Seat orientation — or a small visual marker — could be enough to keep this corner quiet instead of turning it into a hallway.</p>
+  </div>
+</div>
+</div>
+
+<!-- 7: TABLE TURN -->
+<div class="slide" data-index="7">
+<div class="slide-inner">
+  <h2>Table Turns</h2>
+  <div class="rule"></div>
+  <div class="card" style="margin-bottom:.8rem"><h3>Roll-ups prepped in advance</h3><p style="color:var(--cream-dim)">Silverware rolled and stocked on the main station shelf. Turning a table becomes one move: clear, wipe, place a roll-up and a glass. One motion.</p></div>
+  <div class="card" style="margin-bottom:.8rem"><h3>Fixed stock per station</h3><p style="color:var(--cream-dim)">Restocked by the busser or host — never by a server mid-service. Bus tubs never stay visible on the floor.</p></div>
+  <div class="card card-brick"><h3>Two people per table</h3><p style="color:var(--cream-dim)">One clears, the other resets. The room never looks cluttered.</p></div>
+</div>
+</div>
+
+<!-- 8: TEAM HABITS -->
+<div class="slide" data-index="8">
+<div class="slide-inner">
+  <h2>The Team — Three Habits</h2>
+  <div class="rule"></div>
+  <div class="card" style="margin-bottom:.8rem"><h3>1. Pre-shift briefing</h3><p style="color:var(--cream-dim)">Same time, same length, every service. A ritual, not a chore.</p></div>
+  <div class="card" style="margin-bottom:.8rem"><h3>2. A signal for help</h3><p style="color:var(--cream-dim)">Chosen by the team themselves. No chasing a manager mid-rush.</p></div>
+  <div class="card card-brick"><h3>3. Any server, any table</h3><p style="color:var(--cream-dim)">No one should ever hear "I'll go get your server." It's the fastest way to make a guest feel like a number.</p></div>
+</div>
+</div>
+
+<!-- 9: WHAT'S LEFT -->
+<div class="slide" data-index="9">
+<div class="slide-inner">
+  <h2>What's Left to Decide Together</h2>
+  <p class="lead">We open September 16. Rather than a fixed calendar, let's build it together starting today.</p>
+  <ul class="checklist">
+    <li>Walk the empty room and lock in the final table and section layout</li>
+    <li>Write out the full service sequence and validate the Toast configuration</li>
+    <li>First team run-through — no food, just the guest journey</li>
+    <li>Second run-through — with trays and real plates</li>
+    <li>Full dress rehearsal with invited guests, timed start to finish</li>
+    <li>Debrief, adjust, finalize the storefront details</li>
+    <li><strong>Open.</strong></li>
+  </ul>
+</div>
+</div>
+
+</div>
+
+<script>
+// ── DATA ──
+const journeyData = [
+  {icon:'🏠',label:'Storefront',detail:'The first impression. The guest sees the space through the window before they ever touch the door. The storefront tells them what kind of night this is going to be.'},
+  {icon:'👋',label:'Greeted in 10s',detail:'Eye contact and acknowledgment within 10 seconds of entering — even when the room is full. A nod, a smile, a "be right with you" buys you two more minutes.'},
+  {icon:'⏳',label:'Honest wait',detail:'Tell them the real wait time. Offer something to do — a drink at the bar, a walk down the block. Guests wait longer when they trust you.'},
+  {icon:'👣',label:'Walk to table',detail:'Route them without cutting through another table\'s space. The walk itself sets the tone — calm, deliberate, not rushed.'},
+  {icon:'🍸',label:'1st drink 2-3 min',detail:'The first drink lands fast. It signals: we\'re on it. Everything after this can breathe. Momentum starts here.'},
+  {icon:'📋',label:'Menu guidance',detail:'Know the menu cold. Recommend without hesitation. "What\'s good here?" should never get a blank stare — it should get a story.'},
+  {icon:'🧾',label:'Clean ticket',detail:'Orders entered cleanly into Toast. No mis-fires. Kitchen gets exactly what the guest asked for, no guessing.'},
+  {icon:'⏱️',label:'Course pacing',detail:'Timing between courses is read from the table, not the clock. Watch body language — are they lingering or ready? Adjust in real time.'},
+  {icon:'💬',label:'Genuine check-back',detail:'Not "Is everything okay?" — that\'s a yes/no trap. Ask about a specific dish. "How\'s that ribeye?" Show you noticed what they ordered.'},
+  {icon:'🧹',label:'Discreet clearing',detail:'Plates disappear without interrupting conversation. Never stack at the table. The room stays calm even when the kitchen is slammed.'},
+  {icon:'🍰',label:'Dessert suggestion',detail:'One specific suggestion, not the whole menu. "The bread pudding just came out of the oven" lands better than "any dessert tonight?"'},
+  {icon:'📱',label:'Check on Toast',detail:'Check dropped without the guest having to ask. No walking to a register. The last transaction should feel invisible.'},
+  {icon:'🤝',label:'Personal goodbye',detail:'Goodbye by name if you have it. Eye contact. "Thanks for coming in tonight." That\'s the memory they walk out with — make it count.'},
+  {icon:'🔄',label:'Table reset fast',detail:'Two-person turn: one clears, the other resets. Roll-ups prepped in advance. The room never looks like a construction zone between seatings.'},
+];
+
+const zoneData = {
+  '100':{icon:'🍃',title:'Section 100 — Patio & Banquettes',detail:'Tables 101–105 for the banquettes facing the patio, 106+ for the outdoor seating. Accessed from inside only — no separate entrance to manage. The patio feels like a discovery, not an afterthought.'},
+  '200':{icon:'🍺',title:'Section 200 — Center & Bar',detail:'Tables 201–204 for low tables in the center of the room, 205+ for bar seating. The heart of the action — closest to the bar and the energy of the room. Where the room\'s pulse lives.'},
+  '300':{icon:'🛋️',title:'Section 300 — Richie\'s Banquette',detail:'Tables 301+ on the kitchen side. Richie\'s personal banquette — nearest to the service station for effortless coverage. One note: it sits along the restroom pathway; a small visual marker keeps it private.'},
+};
+
+// ── BUILD CARD STACK ──
+const stage=document.getElementById('journey-stage');
+let jIndex=0;
+const jCards=[];
+
+function cardTransform(offset){
+  const abs=Math.abs(offset);
+  const x=offset*200;
+  const z=-abs*120;
+  const rot=offset*14;
+  const scale=offset===0?1.05:0.82;
+  const y=abs*4;
+  return `translateX(calc(-50% + ${x}px)) translateY(${y}px) rotateZ(${rot}deg) scale(${scale})`;
+}
+
+function renderCards(){
+  jCards.forEach((card,i)=>{
+    const off=i-jIndex;
+    card.style.transform=cardTransform(off);
+    card.style.zIndex=100-Math.abs(off);
+    card.style.opacity=Math.abs(off)>3?'0':'1';
+    card.classList.toggle('active',off===0);
+  });
+  document.getElementById('j-counter').textContent=`${jIndex+1} / ${journeyData.length}`;
+}
+
+journeyData.forEach((d,i)=>{
+  const card=document.createElement('div');
+  card.className='j-card';
+  card.innerHTML=`
+    <div class="j-icon">${d.icon}</div>
+    <div class="j-title">${d.label}</div>
+    <div class="j-desc">${d.detail}</div>
+    <a class="j-link" href="journey-step-${i+1}.html" target="_blank" onclick="event.stopPropagation()">Learn More →</a>
+  `;
+  card.addEventListener('click',e=>{
+    if(e.target.tagName==='A')return;
+    if(i===jIndex)return; // active card: do nothing (Learn More handles detail)
+    jIndex=i;renderCards();
+  });
+  stage.appendChild(card);
+  jCards.push(card);
+});
+renderCards();
+
+document.getElementById('j-prev').addEventListener('click',e=>{
+  e.stopPropagation();
+  if(jIndex>0){jIndex--;renderCards();}
+});
+document.getElementById('j-next').addEventListener('click',e=>{
+  e.stopPropagation();
+  if(jIndex<journeyData.length-1){jIndex++;renderCards();}
+});
+
+// Touch swipe on stage
+let jTouchX=0;
+stage.addEventListener('touchstart',e=>{jTouchX=e.touches[0].clientX},{passive:true});
+stage.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-jTouchX;
+  if(Math.abs(dx)>40){
+    if(dx<0&&jIndex<journeyData.length-1)jIndex++;
+    else if(dx>0&&jIndex>0)jIndex--;
+    renderCards();
+  }
+});
+
+// ── SLIDES ──
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+let current = 0;
+
+// Dots
+const dotsEl = document.getElementById('dots');
+for(let i=0;i<total;i++){
+  const d=document.createElement('button');
+  d.className='dot'+(i===0?' active':'');
+  d.setAttribute('aria-label','Go to section '+(i+1));
+  d.addEventListener('click',()=>goTo(i));
+  dotsEl.appendChild(d);
+}
+const dots=document.querySelectorAll('.dot');
+
+function updateUI(){
+  slides.forEach((s,i)=>s.classList.toggle('active',i===current));
+  dots.forEach((d,i)=>d.className='dot'+(i===current?' active':(i<current?' seen':'')));
+  document.getElementById('progress-fill').style.width=((current)/(total-1)*100)+'%';
+  document.getElementById('counter').textContent=(current+1)+' / '+total;
+}
+
+function goTo(i){if(i<0||i>=total)return;current=i;updateUI();}
+
+function next(){
+  if(current===3){
+    // On journey slide: advance card stack instead of slide
+    if(jIndex<journeyData.length-1){jIndex++;renderCards();return;}
+  }
+  if(current<total-1){current++;updateUI();}
+}
+function prev(){
+  if(current===3){
+    if(jIndex>0){jIndex--;renderCards();return;}
+  }
+  if(current>0){current--;updateUI();}
+}
+
+// Keyboard
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('modal').classList.contains('open')){
+    if(e.key==='Escape'){closeModal();return;}
+    return; // don't navigate slides while modal open
+  }
+  if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' '){e.preventDefault();next();}
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();prev();}
+  if(e.key==='Home'){e.preventDefault();goTo(0);}
+  if(e.key==='End'){e.preventDefault();goTo(total-1);}
+});
+
+// Global click → advance/retreat (NOT on interactive elements or modal)
+document.addEventListener('click',e=>{
+  if(document.getElementById('modal').classList.contains('open'))return;
+  if(e.target.closest('.dot')||e.target.closest('button')||e.target.closest('.journey-node')||e.target.closest('.zone')||e.target.closest('.modal-overlay'))return;
+  if(e.clientX>window.innerWidth/2)next();else prev();
+});
+
+// Touch swipe
+let touchX=0;
+document.addEventListener('touchstart',e=>{touchX=e.touches[0].clientX},{passive:true});
+document.addEventListener('touchend',e=>{
+  const dx=(e.changedTouches[0].clientX-touchX);
+  if(Math.abs(dx)>50){dx<0?next():prev();}
+});
+
+// ── MODAL ──
+const modal=document.getElementById('modal');
+const modalNum=document.getElementById('modal-num');
+const modalIcon=document.getElementById('modal-icon');
+const modalTitle=document.getElementById('modal-title');
+const modalDetail=document.getElementById('modal-detail');
+const modalClose=modal.querySelector('.modal-close');
+let lastFocused=null;
+
+function openModal(icon,title,detail,num){
+  lastFocused=document.activeElement;
+  modalIcon.textContent=icon;
+  modalTitle.textContent=title;
+  modalDetail.textContent=detail;
+  modalNum.textContent=num||'';
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden','false');
+  modalClose.focus();
+  // Focus trap
+  modal.addEventListener('keydown',trapFocus);
+}
+
+function closeModal(){
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden','true');
+  modal.removeEventListener('keydown',trapFocus);
+  if(lastFocused)lastFocused.focus();
+}
+
+function trapFocus(e){
+  if(e.key!=='Tab')return;
+  const focusable=modal.querySelectorAll('button,[tabindex]:not([tabindex="-1"])');
+  if(!focusable.length)return;
+  const first=focusable[0],last=focusable[focusable.length-1];
+  if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+  else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+}
+
+modalClose.addEventListener('click',e=>{e.stopPropagation();closeModal();});
+modal.addEventListener('click',e=>{if(e.target===modal){e.stopPropagation();closeModal();}});
+
+// Zone click → modal
+document.querySelectorAll('.zone').forEach(z=>{
+  z.addEventListener('click',e=>{
+    e.stopPropagation();
+    const id=z.dataset.zone;
+    if(zoneData[id])openModal(zoneData[id].icon,zoneData[id].title,zoneData[id].detail,id);
+  });
+});
+
+updateUI();
+</script>
+</body>
+</html>
