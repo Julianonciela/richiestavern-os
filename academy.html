@@ -61,12 +61,11 @@ if(!role){window.location='index.html';}
 document.getElementById('user-label').textContent='👤 '+localStorage.getItem('rtos_name');
 function logout(){localStorage.clear();window.location='index.html';}
 
-// Lessons data — stored in academy/*.md, loaded dynamically
 const lessons=[
   {id:1,icon:'🏠',title:'The First Impression',desc:'Why the first 30 seconds set the tone for the entire meal',file:'lesson-1.md'},
   {id:2,icon:'👀',title:'Reading the Room',desc:'How to see what the guest needs before they ask',file:'lesson-2.md'},
-  {id:3,icon:'💬',title:'The Art of the Check-Back',desc:'Asking the right question at the right moment',file:'lesson-3.md'},
-  {id:4,icon:'🤝',title:'Team Service Mindset',desc:'Any server, any table — building a culture of shared responsibility',file:'lesson-4.md'},
+  {id:3,icon:'🔄',title:'The Service Sequence',desc:'The choreographed 10-step flow that runs every table, every night',file:'lesson-3.md'},
+  {id:4,icon:'🛡️',title:'Handling Difficult Moments',desc:'Acknowledge, Act, Follow Up — the framework for every curveball',file:'lesson-4.md'},
   {id:5,icon:'🧹',title:'Invisible Service',desc:'Clearing, resetting, and moving through the room without being noticed',file:'lesson-5.md'},
 ];
 
@@ -105,7 +104,6 @@ async function openLesson(id){
 }
 function closeLesson(){document.getElementById('lesson-view').style.display='none';}
 
-// Minimal MD→HTML
 function mdToHtml(md){
   return md
     .replace(/^### (.+)/gm,'<h3>$1</h3>')
