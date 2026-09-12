@@ -1,0 +1,62 @@
+{
+  "vercel.json": {
+    "mtime": 1789166847.0144427,
+    "seen": 1789171553.8113384,
+    "ast_hash": "fb233f88f2a8a0a691f7cc6293ceda82",
+    "semantic_hash": ""
+  },
+  "AGENTS.md": {
+    "mtime": 1789171529.8386104,
+    "seen": 1789171553.8113437,
+    "ast_hash": "9671953c0a207c4bbbc7e3ab247b7f7f",
+    "semantic_hash": ""
+  },
+  "academy.html": {
+    "mtime": 1789166954.414488,
+    "seen": 1789171553.8113463,
+    "ast_hash": "530e318a90813f000b3c4b8ea2a1695d",
+    "semantic_hash": ""
+  },
+  "academy/lesson-1.md": {
+    "mtime": 1789166997.2415051,
+    "seen": 1789171553.8113477,
+    "ast_hash": "cfac911e41d1815ec4969125d73be779",
+    "semantic_hash": ""
+  },
+  "academy/lesson-2.md": {
+    "mtime": 1789166997.235505,
+    "seen": 1789171553.8113492,
+    "ast_hash": "5d72038966fd02b0ce914f244c1c9006",
+    "semantic_hash": ""
+  },
+  "admin.html": {
+    "mtime": 1789166997.220505,
+    "seen": 1789171553.8113506,
+    "ast_hash": "82be51f2260ca12683756fd3ef53d46c",
+    "semantic_hash": ""
+  },
+  "floor-plan-en.html": {
+    "mtime": 1789167002.5365071,
+    "seen": 1789171553.8113523,
+    "ast_hash": "252c3d56c98966b1c15b1c2ac321bf46",
+    "semantic_hash": ""
+  },
+  "floor-plan.html": {
+    "mtime": 1789167002.5395072,
+    "seen": 1789171553.811354,
+    "ast_hash": "76eea783b60dfa3ecee8d156ba7c57b3",
+    "semantic_hash": ""
+  },
+  "hub.html": {
+    "mtime": 1789166909.1044695,
+    "seen": 1789171553.8113556,
+    "ast_hash": "bde092e79148b1245c1dc27390b29ee9",
+    "semantic_hash": ""
+  },
+  "index.html": {
+    "mtime": 1789166847.0064425,
+    "seen": 1789171553.811357,
+    "ast_hash": "4a7d564ec90a7812ec6b4fcff6c81230",
+    "semantic_hash": ""
+  }
+}
