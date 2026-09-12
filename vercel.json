@@ -1,1 +1,1 @@
-{"buildCommand":"","outputDirectory":".","installCommand":"","routes":[{"src":"/(.*)","dest":"/$1"}]}
+{"buildCommand":"","outputDirectory":".","installCommand":"","cleanUrls":true,"routes":[{"src":"/(.*)","dest":"/$1"}]}
